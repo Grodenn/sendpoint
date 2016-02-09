@@ -10,45 +10,96 @@
 #include <limits.h>
 #include <errno.h>
 
+#define TRUE 1;
+#define FALSE 0;
+
+typedef struct inputData {
+    char *rawX;
+    char *rawY;
+    char *url;
+    char *jsonObj;
+} inputData;
+
+inputData extractInputData(char *buffer, inputData inData);
+void handleInputData(CURL *curl, inputData inData);
+void createJsonCoordObj(char *jsonObj, long *x, long *y);
 void printInvalidCoord(char coord);
 void printInstruction();
 int parseCoordinate(char *str, long *val);
-void sendPointData(char *url, char *data);
+void sendCoordinateData(CURL *curl, char *url, char *data);
 
 int main(int argc, char *argv[]) {
     
-    if(argc == 4){
-        
-        char *jsonObj = calloc(1024, sizeof(char));
-        
-        long *x = calloc(1, sizeof(long));
-        long *y = calloc(1, sizeof(long));
-        
-        if(parseCoordinate(argv[1], x)){
-            printInvalidCoord('X');
-            exit(EXIT_FAILURE);
-        }
-        if(parseCoordinate(argv[2], y)){
-            printInvalidCoord('Y');
-            exit(EXIT_FAILURE);
-        }
-        
-        
-        sprintf(jsonObj, "{\"X\":%ld, \"Y\":%ld}", *x, *y);
-        
-        sendPointData(argv[3], jsonObj);
-        
-        free(x);
-        free(y);
-        free(jsonObj);
+    CURL *curl;
+    curl_global_init(CURL_GLOBAL_ALL);
+    inputData inData;
+    inData.jsonObj = calloc(1024, sizeof(char));
+    
+    char *buffer = calloc(1024, sizeof(char));
+    
+    int running = TRUE;
+    
+    if (argc == 2) {
+        inData.url = argv[2];
+    } else if(argc == 4){
+        inData.rawX = argv[1];
+        inData.rawY = argv[2];
+        inData.url = argv[3];
+        handleInputData(curl, inData);
     } else {
         printInstruction();
-        exit(EXIT_FAILURE);
+        running = FALSE;
     }
     
     
+    while(running && fgets(buffer, sizeof(buffer), stdin)){
+        
+        inData = extractInputData(buffer, inData);
+        handleInputData(curl, inData);
+        
+    }
+    
+    free(buffer);
+    free(inData.jsonObj);
+    curl_global_cleanup();
+    
     return EXIT_SUCCESS;
     
+}
+
+inputData extractInputData(char *buffer, inputData inData){
+
+    //Fix buffer extraction and error handeling
+    
+    return inData;
+}
+
+void handleInputData(CURL *curl, inputData inData){
+    
+    long *x = calloc(1, sizeof(long));
+    long *y = calloc(1, sizeof(long));
+    
+    int sendObj = TRUE;
+    
+    if(parseCoordinate(inData.rawX, x)){
+        printInvalidCoord('X');
+        sendObj = FALSE;
+    } else if(parseCoordinate(inData.rawY, y)){
+        printInvalidCoord('Y');
+        sendObj = FALSE;
+    }
+    
+    if(sendObj){
+        createJsonCoordObj(inData.jsonObj, x, y);
+        sendCoordinateData(curl, inData.url, inData.jsonObj);
+    }
+    
+    free(x);
+    free(y);
+}
+
+void createJsonCoordObj(char *jsonObj, long *x, long *y){
+    sprintf(jsonObj, "{\"X\":%ld, \"Y\":%ld}", *x, *y);
 }
 
 void printInvalidCoord(char coord){
@@ -63,7 +114,7 @@ void printInstruction(){
 
 int parseCoordinate(char *str, long *val){
     
-    int base = 10, returnValue = 0;
+    int base = 10, returnValue = FALSE;
     char *endptr;
     
     errno = 0;
@@ -71,28 +122,23 @@ int parseCoordinate(char *str, long *val){
     
     if ((errno == ERANGE && (*val == LONG_MAX || *val == LONG_MIN))
         || (errno != 0 && *val == 0)) {
-        returnValue = 1;
+        returnValue = TRUE;
     }
     
     if (endptr == str) {
-        returnValue = 1;
+        returnValue = TRUE;
     }
     
     if (*endptr != '\0'){
-        returnValue = 1;
+        returnValue = TRUE;
     }
     
     return returnValue;
 }
 
 
-
-
-void sendPointData(char *url, char* data){
-    CURL *curl;
+void sendCoordinateData(CURL *curl, char *url, char* data){
     CURLcode res;
-    
-    curl_global_init(CURL_GLOBAL_ALL);
     
     curl = curl_easy_init();
     if(curl) {
@@ -109,10 +155,10 @@ void sendPointData(char *url, char* data){
         res = curl_easy_perform(curl);
         if(res != CURLE_OK){
             fprintf(stderr, "%s\n", curl_easy_strerror(res));
-            exit(EXIT_FAILURE);
+            //exit(EXIT_FAILURE);
         }
         
         curl_easy_cleanup(curl);
     }
-    curl_global_cleanup();
+    
 }
