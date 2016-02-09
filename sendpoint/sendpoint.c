@@ -1,6 +1,5 @@
 //
-//  main.c
-//  sendpoint
+//  sendpoint.c
 //
 //  Created by Isak on 09/02/2016.
 //
@@ -16,12 +15,11 @@ void printInstruction();
 int parseCoordinate(char *str, long *val);
 void sendPointData(char *url, char *data);
 
-int main(int argc, char * argv[]) {
+int main(int argc, char *argv[]) {
     
     if(argc == 4){
         
         char *jsonObj = calloc(1024, sizeof(char));
-        char *url = calloc(1024, sizeof(char));
         
         long *x = calloc(1, sizeof(long));
         long *y = calloc(1, sizeof(long));
@@ -35,16 +33,14 @@ int main(int argc, char * argv[]) {
             exit(EXIT_FAILURE);
         }
         
-        url = argv[3];
         
         sprintf(jsonObj, "{\"X\":%ld, \"Y\":%ld}", *x, *y);
         
-        sendPointData(url, jsonObj);
+        sendPointData(argv[3], jsonObj);
         
         free(x);
         free(y);
         free(jsonObj);
-        free(url);
     } else {
         printInstruction();
         exit(EXIT_FAILURE);
