@@ -20,7 +20,7 @@ typedef struct inputData {
     char *jsonObj;
 } inputData;
 
-inputData extractInputData(char *buffer, inputData inData);
+int isBufferDataValid(char *buffer, inputData *inData);
 void handleInputData(CURL *curl, inputData inData);
 void createJsonCoordObj(char *jsonObj, long *x, long *y);
 void printInvalidCoord(char coord);
@@ -32,20 +32,19 @@ int main(int argc, char *argv[]) {
     
     CURL *curl;
     curl_global_init(CURL_GLOBAL_ALL);
-    inputData inData;
-    inData.jsonObj = calloc(1024, sizeof(char));
-    
+    inputData *inData = calloc(1, sizeof(inputData));
+    inData->jsonObj = calloc(1024, sizeof(char));
     char *buffer = calloc(1024, sizeof(char));
     
     int running = TRUE;
     
     if (argc == 2) {
-        inData.url = argv[2];
+        inData->url = argv[2];
     } else if(argc == 4){
-        inData.rawX = argv[1];
-        inData.rawY = argv[2];
-        inData.url = argv[3];
-        handleInputData(curl, inData);
+        inData->rawX = argv[1];
+        inData->rawY = argv[2];
+        inData->url = argv[3];
+        handleInputData(curl, *inData);
     } else {
         printInstruction();
         running = FALSE;
@@ -54,24 +53,26 @@ int main(int argc, char *argv[]) {
     
     while(running && fgets(buffer, sizeof(buffer), stdin)){
         
-        inData = extractInputData(buffer, inData);
-        handleInputData(curl, inData);
-        
+        if(isBufferDataValid(buffer, inData)){
+            handleInputData(curl, *inData);
+        }
     }
     
     free(buffer);
-    free(inData.jsonObj);
+    free(inData->jsonObj);
+    free(inData);
     curl_global_cleanup();
     
     return EXIT_SUCCESS;
     
 }
 
-inputData extractInputData(char *buffer, inputData inData){
-
+int isBufferDataValid(char *buffer, inputData *inData){
+    int status = TRUE;
+    
     //Fix buffer extraction and error handeling
     
-    return inData;
+    return status;
 }
 
 void handleInputData(CURL *curl, inputData inData){
