@@ -20,7 +20,7 @@ typedef struct inputData {
     char *jsonObj;
 } inputData;
 
-int isBufferDataValid(char *buffer, inputData *inData);
+int isInputFormatValid(char *buffer, inputData *inData);
 void handleInputData(CURL *curl, inputData inData);
 void createJsonCoordObj(char *jsonObj, long *x, long *y);
 void printInvalidCoord(char coord);
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     
     while(running && fgets(buffer, sizeof(buffer), stdin)){
         
-        if(isBufferDataValid(buffer, inData)){
+        if(isInputFormatValid(buffer, inData)){
             handleInputData(curl, *inData);
         }
     }
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     
 }
 
-int isBufferDataValid(char *buffer, inputData *inData){
+int isInputFormatValid(char *buffer, inputData *inData){
     int status = TRUE;
     
     //Fix buffer extraction and error handeling
