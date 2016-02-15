@@ -88,6 +88,10 @@ void createJsonCoordObj(char *jsonObj, long *x, long *y);
  */
 void printInvalidCoord(char coord);
 
+/**
+ Print the usage instruction for input at stdin
+ */
+void printInputInstruction();
 
 /**
  Prints the usage instruction

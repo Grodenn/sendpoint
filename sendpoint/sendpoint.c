@@ -1,23 +1,19 @@
-//
-//  sendpoint.c
-//
-//  Created by Isak on 09/02/2016.
-//
-
 #include "sendpoint.h"
 
 int main(int argc, char *argv[]) {
     
+    int inputSize = 1024;
     CURL *curl = NULL;
     curl_global_init(CURL_GLOBAL_ALL);
     inputData *inData = calloc(1, sizeof(inputData));
     inData->jsonObj = calloc(1024, sizeof(char));
-    char *buffer = calloc(1024, sizeof(char));
+    char *buffer = calloc(inputSize, sizeof(char));
     
-    int running = TRUE;
+    int running = FALSE;
     
     if (argc == 2) {
-        inData->url = argv[2];
+        inData->url = argv[1];
+        running = TRUE;
     } else if(argc == 4){
         inData->rawX = argv[1];
         inData->rawY = argv[2];
@@ -25,7 +21,6 @@ int main(int argc, char *argv[]) {
         handleInputData(curl, *inData);
     } else {
         printInstruction();
-        running = FALSE;
     }
     
     
@@ -33,6 +28,8 @@ int main(int argc, char *argv[]) {
         
         if(isInputFormatValid(buffer, inData)){
             handleInputData(curl, *inData);
+        } else {
+            printInputInstruction();
         }
     }
     
@@ -57,18 +54,18 @@ int main(int argc, char *argv[]) {
  */
 int isInputFormatValid(char *buffer, inputData *inData){
     int status = TRUE;
-    char * pch;
-    printf ("Splitting string into tokens: %s",buffer);
-    pch = strtok (buffer, ",");
-    while (pch != NULL)
-    {
-        printf ("%s\n",pch);
-        pch = strtok (NULL, ",");
+    char *x, *y;
+    
+    x = strtok (buffer, ",");
+    y = strtok (NULL, ",\n\0");
+    if(strtok(NULL, "") != NULL || x == NULL || y == NULL){
+        status = FALSE;
     }
-    //fflush(buffer);
-    //A null pointer is returned if there are no tokens left to retrieve.
-    status = FALSE;
-    return status;}
+    inData->rawX = x;
+    inData->rawY = y;
+
+    return status;
+}
 
 
 /**
@@ -162,9 +159,9 @@ void sendCoordinateData(CURL *curl, char *url, char* data){
         res = curl_easy_perform(curl);
         if(res != CURLE_OK){
             fprintf(stderr, "%s\n", curl_easy_strerror(res));
-            //exit(EXIT_FAILURE);
         }
         
+        curl_slist_free_all(headers);
         curl_easy_cleanup(curl);
     }
     
@@ -192,7 +189,14 @@ void printInvalidCoord(char coord){
 }
 
 /**
- Prints the usage instruction
+ Print the usage instruction for input at stdin
+ */
+void printInputInstruction(){
+    fprintf(stderr, "usage: xx,yy");
+}
+
+/**
+ Prints the usage instruction for input at commandline
  */
 void printInstruction(){
     fprintf(stderr,"usage: sendpoint [x] [y] [url]\n");

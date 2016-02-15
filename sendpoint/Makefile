@@ -5,8 +5,7 @@ FILES = sendpoint.c
 OUTPUT = sendpoint
 
 # Librarys
-INCLUDE = -I/usr/local/include
-#LDFLAGS = -L/usr/local/lib 
+INCLUDE = -I/usr/local/include 
 LDLIBS = -lcurl
 
 #Build program
