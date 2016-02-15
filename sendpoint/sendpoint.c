@@ -4,33 +4,11 @@
 //  Created by Isak on 09/02/2016.
 //
 
-#include <stdio.h>
-#include <curl/curl.h>
-#include <stdlib.h>
-#include <limits.h>
-#include <errno.h>
-
-#define TRUE 1;
-#define FALSE 0;
-
-typedef struct inputData {
-    char *rawX;
-    char *rawY;
-    char *url;
-    char *jsonObj;
-} inputData;
-
-int isInputFormatValid(char *buffer, inputData *inData);
-void handleInputData(CURL *curl, inputData inData);
-void createJsonCoordObj(char *jsonObj, long *x, long *y);
-void printInvalidCoord(char coord);
-void printInstruction();
-int parseCoordinate(char *str, long *val);
-void sendCoordinateData(CURL *curl, char *url, char *data);
+#include "sendpoint.h"
 
 int main(int argc, char *argv[]) {
     
-    CURL *curl;
+    CURL *curl = NULL;
     curl_global_init(CURL_GLOBAL_ALL);
     inputData *inData = calloc(1, sizeof(inputData));
     inData->jsonObj = calloc(1024, sizeof(char));
@@ -67,14 +45,40 @@ int main(int argc, char *argv[]) {
     
 }
 
+
+/**
+ Validates an input value and if valid extracts the data
+ 
+ param: *buffer the input String
+        *inData inputData with the extracted data
+ 
+ return TRUE or FALSE depending on if the input string was in a valid 
+        format or not
+ */
 int isInputFormatValid(char *buffer, inputData *inData){
     int status = TRUE;
-    
-    //Fix buffer extraction and error handeling
-    
-    return status;
-}
+    char * pch;
+    printf ("Splitting string into tokens: %s",buffer);
+    pch = strtok (buffer, ",");
+    while (pch != NULL)
+    {
+        printf ("%s\n",pch);
+        pch = strtok (NULL, ",");
+    }
+    //fflush(buffer);
+    //A null pointer is returned if there are no tokens left to retrieve.
+    status = FALSE;
+    return status;}
 
+
+/**
+ Takes user input data, validate it and if valid sends it as a json object to the server.
+ 
+ param: *curl   pointer to the global curl instance
+        inData  an instance of inputData containing the user input with 
+                the rawX, rawY and the URL.
+ 
+ */
 void handleInputData(CURL *curl, inputData inData){
     
     long *x = calloc(1, sizeof(long));
@@ -99,30 +103,24 @@ void handleInputData(CURL *curl, inputData inData){
     free(y);
 }
 
-void createJsonCoordObj(char *jsonObj, long *x, long *y){
-    sprintf(jsonObj, "{\"X\":%ld, \"Y\":%ld}", *x, *y);
-}
-
-void printInvalidCoord(char coord){
-    fprintf(stderr,"%c not a valid coordinate\n", coord);
-    printInstruction();
-}
-
-void printInstruction(){
-    fprintf(stderr,"usage: sendpoint [x] [y] [url]\n");
-}
-
-
-int parseCoordinate(char *str, long *val){
+/**
+ Validate user supplied coordinates and makes sure they are valid and is number. 
+ 
+ param: *str        pointer to a string with containing the coordinate
+        *coordinate pointer to the extracted coordinate
+ 
+ return TRUE or FALSE depending on if the parsing was successful or not
+ */
+int parseCoordinate(char *str, long *coordinate){
     
     int base = 10, returnValue = FALSE;
     char *endptr;
     
     errno = 0;
-    *val = strtol(str, &endptr, base);
+    *coordinate = strtol(str, &endptr, base);
     
-    if ((errno == ERANGE && (*val == LONG_MAX || *val == LONG_MIN))
-        || (errno != 0 && *val == 0)) {
+    if ((errno == ERANGE && (*coordinate == LONG_MAX || *coordinate == LONG_MIN))
+        || (errno != 0 && *coordinate == 0)) {
         returnValue = TRUE;
     }
     
@@ -138,6 +136,14 @@ int parseCoordinate(char *str, long *val){
 }
 
 
+/**
+ Sends a string to the server over the HTTP protocol
+ 
+ param: *curl   pointer to the global curl instance
+        *url    string containg the URL where the data will be sent
+        *data   string with the data that will be sent
+ 
+ */
 void sendCoordinateData(CURL *curl, char *url, char* data){
     CURLcode res;
     
@@ -162,4 +168,32 @@ void sendCoordinateData(CURL *curl, char *url, char* data){
         curl_easy_cleanup(curl);
     }
     
+}
+
+/**
+ Generate a valid json object containing the coordinates of X and Y
+ 
+ param: *jsonObj    the generated json object
+ *x          the X coordinate
+ *y          the Y coordinate
+ */
+void createJsonCoordObj(char *jsonObj, long *x, long *y){
+    sprintf(jsonObj, "{\"X\":%ld, \"Y\":%ld}", *x, *y);
+}
+
+/**
+ Prints an error message regarding the coordinates
+ 
+ param: coord   a char with the axis (example 'X')
+ */
+void printInvalidCoord(char coord){
+    fprintf(stderr,"%c not a valid coordinate\n", coord);
+    printInstruction();
+}
+
+/**
+ Prints the usage instruction
+ */
+void printInstruction(){
+    fprintf(stderr,"usage: sendpoint [x] [y] [url]\n");
 }
