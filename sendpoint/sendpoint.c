@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     }
     
     
-    while(running && fgets(buffer, sizeof(buffer), stdin)){
+    while(running && fgets(buffer, inputSize*sizeof(char), stdin)){
         
         if(isInputFormatValid(buffer, inData)){
             handleInputData(curl, *inData);
@@ -185,14 +185,13 @@ void createJsonCoordObj(char *jsonObj, long *x, long *y){
  */
 void printInvalidCoord(char coord){
     fprintf(stderr,"%c not a valid coordinate\n", coord);
-    printInstruction();
 }
 
 /**
  Print the usage instruction for input at stdin
  */
 void printInputInstruction(){
-    fprintf(stderr, "usage: xx,yy");
+    fprintf(stderr, "usage: xx,yy\n");
 }
 
 /**
