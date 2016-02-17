@@ -60,7 +60,7 @@ void handleInputData(CURL *curl, inputData inData);
  
  return TRUE or FALSE depending on if the parsing was successful or not
  */
-int parseCoordinate(char *str, long *coordinate);
+int isStringInteger(char *str, long *num);
 
 /**
  Sends a string to the server over the HTTP protocol
@@ -70,7 +70,7 @@ int parseCoordinate(char *str, long *coordinate);
  *data   string with the data that will be sent
  
  */
-void sendCoordinateData(CURL *curl, char *url, char *data);
+void sendJsonNetPacket(CURL *curl, char *url, char *data);
 
 /**
  Generate a valid json object containing the coordinates of X and Y

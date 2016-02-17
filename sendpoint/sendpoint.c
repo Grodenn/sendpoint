@@ -4,7 +4,7 @@ int main(int argc, char *argv[]) {
     
     int inputSize = 1024;
     CURL *curl = NULL;
-    curl_global_init(CURL_GLOBAL_ALL);
+    curl_global_init(CURL_GLOBAL_DEFAULT);
     inputData *inData = calloc(1, sizeof(inputData));
     inData->jsonObj = calloc(1024, sizeof(char));
     char *buffer = calloc(inputSize, sizeof(char));
@@ -83,17 +83,17 @@ void handleInputData(CURL *curl, inputData inData){
     
     int sendObj = TRUE;
     
-    if(parseCoordinate(inData.rawX, x)){
+    if(!isStringInteger(inData.rawX, x)){
         printInvalidCoord('X');
         sendObj = FALSE;
-    } else if(parseCoordinate(inData.rawY, y)){
+    } else if(!isStringInteger(inData.rawY, y)){
         printInvalidCoord('Y');
         sendObj = FALSE;
     }
     
     if(sendObj){
         createJsonCoordObj(inData.jsonObj, x, y);
-        sendCoordinateData(curl, inData.url, inData.jsonObj);
+        sendJsonNetPacket(curl, inData.url, inData.jsonObj);
     }
     
     free(x);
@@ -101,32 +101,32 @@ void handleInputData(CURL *curl, inputData inData){
 }
 
 /**
- Validate user supplied coordinates and makes sure they are valid and is number. 
+ Validate a string and makes sure it is a number.
  
- param: *str        pointer to a string with containing the coordinate
-        *coordinate pointer to the extracted coordinate
+ param: *str        pointer to a string with the number
+        *num        pointer to the extracted number
  
  return TRUE or FALSE depending on if the parsing was successful or not
  */
-int parseCoordinate(char *str, long *coordinate){
+int isStringInteger(char *str, long *num){
     
-    int base = 10, returnValue = FALSE;
+    int base = 10, returnValue = TRUE;
     char *endptr;
     
     errno = 0;
-    *coordinate = strtol(str, &endptr, base);
+    *num = strtol(str, &endptr, base);
     
-    if ((errno == ERANGE && (*coordinate == LONG_MAX || *coordinate == LONG_MIN))
-        || (errno != 0 && *coordinate == 0)) {
-        returnValue = TRUE;
+    if ((errno == ERANGE && (*num == LONG_MAX || *num == LONG_MIN))
+        || (errno != 0 && *num == 0)) {
+        returnValue = FALSE;
     }
     
     if (endptr == str) {
-        returnValue = TRUE;
+        returnValue = FALSE;
     }
     
     if (*endptr != '\0'){
-        returnValue = TRUE;
+        returnValue = FALSE;
     }
     
     return returnValue;
@@ -134,14 +134,14 @@ int parseCoordinate(char *str, long *coordinate){
 
 
 /**
- Sends a string to the server over the HTTP protocol
+ Sends a json object to the server over the HTTP protocol
  
  param: *curl   pointer to the global curl instance
         *url    string containg the URL where the data will be sent
         *data   string with the data that will be sent
  
  */
-void sendCoordinateData(CURL *curl, char *url, char* data){
+void sendJsonNetPacket(CURL *curl, char *url, char* data){
     CURLcode res;
     
     curl = curl_easy_init();
@@ -171,8 +171,8 @@ void sendCoordinateData(CURL *curl, char *url, char* data){
  Generate a valid json object containing the coordinates of X and Y
  
  param: *jsonObj    the generated json object
- *x          the X coordinate
- *y          the Y coordinate
+        *x          the X coordinate
+        *y          the Y coordinate
  */
 void createJsonCoordObj(char *jsonObj, long *x, long *y){
     sprintf(jsonObj, "{\"X\":%ld, \"Y\":%ld}", *x, *y);
