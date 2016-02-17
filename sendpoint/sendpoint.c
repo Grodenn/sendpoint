@@ -7,6 +7,8 @@ int main(int argc, char *argv[]) {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     inputData *inData = calloc(1, sizeof(inputData));
     inData->jsonObj = calloc(1024, sizeof(char));
+    inData->x = calloc(1, sizeof(long));
+    inData->y = calloc(1, sizeof(long));
     char *buffer = calloc(inputSize, sizeof(char));
     
     int running = FALSE;
@@ -18,7 +20,7 @@ int main(int argc, char *argv[]) {
         inData->rawX = argv[1];
         inData->rawY = argv[2];
         inData->url = argv[3];
-        handleInputData(curl, *inData);
+        handleInputData(curl, inData);
     } else {
         printInstruction();
     }
@@ -27,7 +29,7 @@ int main(int argc, char *argv[]) {
     while(running && fgets(buffer, inputSize*sizeof(char), stdin)){
         
         if(isInputFormatValid(buffer, inData)){
-            handleInputData(curl, *inData);
+            handleInputData(curl, inData);
         } else {
             printInputInstruction();
         }
@@ -35,6 +37,8 @@ int main(int argc, char *argv[]) {
     
     free(buffer);
     free(inData->jsonObj);
+    free(inData->x);
+    free(inData->y);
     free(inData);
     curl_global_cleanup();
     
@@ -69,35 +73,32 @@ int isInputFormatValid(char *buffer, inputData *inData){
 
 
 /**
- Takes user input data, validate it and if valid sends it as a json object to the server.
+ Takes user input data, validate it and if valid sends it as a json object 
+ to the server.
  
  param: *curl   pointer to the global curl instance
         inData  an instance of inputData containing the user input with 
                 the rawX, rawY and the URL.
  
  */
-void handleInputData(CURL *curl, inputData inData){
+void handleInputData(CURL *curl, inputData *inData){
     
-    long *x = calloc(1, sizeof(long));
-    long *y = calloc(1, sizeof(long));
+    
     
     int sendObj = TRUE;
     
-    if(!isStringInteger(inData.rawX, x)){
+    if(!isStringInteger(inData->rawX, inData->x)){
         printInvalidCoord('X');
         sendObj = FALSE;
-    } else if(!isStringInteger(inData.rawY, y)){
+    } else if(!isStringInteger(inData->rawY, inData->y)){
         printInvalidCoord('Y');
         sendObj = FALSE;
     }
     
     if(sendObj){
-        createJsonCoordObj(inData.jsonObj, x, y);
-        sendJsonNetPacket(curl, inData.url, inData.jsonObj);
+        createJsonCoordObj(inData->jsonObj, inData->x, inData->y);
+        sendJsonNetPacket(curl, inData->url, inData->jsonObj);
     }
-    
-    free(x);
-    free(y);
 }
 
 /**

@@ -23,6 +23,8 @@
 #define FALSE 0;
 
 typedef struct inputData {
+    long *x;
+    long *y;
     char *rawX;
     char *rawY;
     char *url;
@@ -49,7 +51,7 @@ int isInputFormatValid(char *buffer, inputData *inData);
         the rawX, rawY and the URL.
  
  */
-void handleInputData(CURL *curl, inputData inData);
+void handleInputData(CURL *curl, inputData *inData);
 
 
 /**
