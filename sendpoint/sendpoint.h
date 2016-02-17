@@ -25,12 +25,24 @@
 typedef struct inputData {
     long *x;
     long *y;
-    char *rawX;
-    char *rawY;
     char *url;
     char *jsonObj;
 } inputData;
 
+
+/**
+ Generates and allocates memory for a inputData object
+ 
+ return a pointer to the object
+ */
+inputData* createDataObject();
+
+/**
+ Frees all memory allocated for the inputData object
+ 
+ param: *inData pointer to the inputData object that will be freed
+ */
+void freeDataObject(inputData *inData);
 
 /**
  Validates an input value and if valid extracts the data
@@ -53,6 +65,17 @@ int isInputFormatValid(char *buffer, inputData *inData);
  */
 void handleInputData(CURL *curl, inputData *inData);
 
+/**
+ Validates that the supplied coordinates is in the correct format
+ prints an error message if it fails.
+ 
+ param: *x      pointer to the x coordinate that should be validated
+ *y      pointer to the x coordinate that should be validated
+ *inData pointer to a inputData object
+ 
+ return TRUE if successful, FALSE if one of the coordinates is incorrect
+ */
+int validateCoordinates(char *x, char *y, inputData *inData);
 
 /**
  Validate user supplied coordinates and makes sure they are valid and is number.

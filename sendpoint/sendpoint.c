@@ -2,14 +2,12 @@
 
 int main(int argc, char *argv[]) {
     
-    int inputSize = 1024;
+    int BUFFER_SIZE = 1024;
+    
     CURL *curl = NULL;
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    inputData *inData = calloc(1, sizeof(inputData));
-    inData->jsonObj = calloc(1024, sizeof(char));
-    inData->x = calloc(1, sizeof(long));
-    inData->y = calloc(1, sizeof(long));
-    char *buffer = calloc(inputSize, sizeof(char));
+    inputData *inData = createDataObject();
+    char *buffer = calloc(BUFFER_SIZE, sizeof(char));
     
     int running = FALSE;
     
@@ -17,34 +15,69 @@ int main(int argc, char *argv[]) {
         inData->url = argv[1];
         running = TRUE;
     } else if(argc == 4){
-        inData->rawX = argv[1];
-        inData->rawY = argv[2];
+        
         inData->url = argv[3];
-        handleInputData(curl, inData);
+        
+        if(validateCoordinates(argv[1], argv[2], inData)){
+            
+            createJsonCoordObj(inData->jsonObj, inData->x, inData->y);
+            sendJsonNetPacket(curl, inData->url, inData->jsonObj);
+            
+        } else {
+            printInstruction();
+        }
+        
+        
     } else {
         printInstruction();
     }
     
     
-    while(running && fgets(buffer, inputSize*sizeof(char), stdin)){
+    while(running && fgets(buffer, BUFFER_SIZE*sizeof(char), stdin)){
         
         if(isInputFormatValid(buffer, inData)){
-            handleInputData(curl, inData);
+            
+            createJsonCoordObj(inData->jsonObj, inData->x, inData->y);
+            sendJsonNetPacket(curl, inData->url, inData->jsonObj);
+            
         } else {
             printInputInstruction();
         }
     }
     
     free(buffer);
-    free(inData->jsonObj);
-    free(inData->x);
-    free(inData->y);
-    free(inData);
+    freeDataObject(inData);
     curl_global_cleanup();
     
     return EXIT_SUCCESS;
     
 }
+
+/**
+ Generates and allocates memory for a inputData object
+ 
+ return a pointer to the object
+ */
+inputData* createDataObject(){
+    inputData *inData = calloc(1, sizeof(inputData));
+    inData->jsonObj = calloc(1024, sizeof(char));
+    inData->x = calloc(1, sizeof(long));
+    inData->y = calloc(1, sizeof(long));
+    return inData;
+}
+
+/**
+ Frees all memory allocated for the inputData object
+ 
+ param: *inData pointer to the inputData object that will be freed
+ */
+void freeDataObject(inputData *inData){
+    free(inData->jsonObj);
+    free(inData->x);
+    free(inData->y);
+    free(inData);
+}
+
 
 
 /**
@@ -65,40 +98,39 @@ int isInputFormatValid(char *buffer, inputData *inData){
     if(strtok(NULL, "") != NULL || x == NULL || y == NULL){
         status = FALSE;
     }
-    inData->rawX = x;
-    inData->rawY = y;
+    
+    if(status && !validateCoordinates(x, y, inData)){
+        status = FALSE;
+    }
 
     return status;
 }
 
 
 /**
- Takes user input data, validate it and if valid sends it as a json object 
- to the server.
+ Validates that the supplied coordinates is in the correct format
+ prints an error message if it fails.
  
- param: *curl   pointer to the global curl instance
-        inData  an instance of inputData containing the user input with 
-                the rawX, rawY and the URL.
+ param: *x      pointer to the x coordinate that should be validated
+        *y      pointer to the x coordinate that should be validated
+        *inData pointer to a inputData object
  
+ return TRUE if successful, FALSE if one of the coordinates is incorrect
  */
-void handleInputData(CURL *curl, inputData *inData){
+int validateCoordinates(char *x, char *y, inputData *inData){
+    int validCoords = TRUE;
     
-    
-    
-    int sendObj = TRUE;
-    
-    if(!isStringInteger(inData->rawX, inData->x)){
+    if(!isStringInteger(x, inData->x)){
         printInvalidCoord('X');
-        sendObj = FALSE;
-    } else if(!isStringInteger(inData->rawY, inData->y)){
-        printInvalidCoord('Y');
-        sendObj = FALSE;
+        validCoords = FALSE;
     }
     
-    if(sendObj){
-        createJsonCoordObj(inData->jsonObj, inData->x, inData->y);
-        sendJsonNetPacket(curl, inData->url, inData->jsonObj);
+    if(!isStringInteger(y, inData->y)){
+        printInvalidCoord('Y');
+        validCoords = FALSE;
     }
+    
+    return validCoords;
 }
 
 /**
