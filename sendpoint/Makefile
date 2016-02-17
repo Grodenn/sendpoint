@@ -1,11 +1,12 @@
 #settings that is used
 CC = gcc
-CFLAGS = -Wall -std=c99
+CFLAGS = -Wall -std=c99 -g
 FILES = sendpoint.c
 OUTPUT = sendpoint
 
 # Librarys
-INCLUDE = -I/usr/local/include 
+INCLUDE = -I/usr/local/include
+LDFLAGS = -L/usr/local/lib/
 LDLIBS = -lcurl
 
 #Build program
